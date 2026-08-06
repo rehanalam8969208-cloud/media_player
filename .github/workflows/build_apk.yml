@@ -24,6 +24,13 @@ jobs:
         run: |
           rm -rf android
           flutter create . --platforms=android --org=com.rehan.mediax
+          
+          # Adding Internet Permission automatically to AndroidManifest.xml for streaming video/audio
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.WAKE_LOCK"/>' "$MANIFEST_PATH"
+            echo "Permissions added successfully!"
+          fi
 
       - name: Get Dependencies
         run: flutter pub get

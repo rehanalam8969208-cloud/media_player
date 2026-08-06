@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 import 'dart:ui';
 
 void main() {
@@ -15,7 +17,7 @@ class MediaXApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MediaX Pro',
+      title: 'MediaX Offline Pro',
       theme: ThemeData(
         fontFamily: 'Roboto',
         brightness: Brightness.light,
@@ -72,32 +74,28 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentTab = 0; // 0 for Videos, 1 for Music
+  List<File> offlineVideos = [];
+  List<File> offlineMusic = [];
 
-  final List<Map<String, String>> sampleVideos = [
-    {
-      'title': 'Nature Foggy Morning',
-      'url': 'https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-fog-4228-large.mp4',
-      'duration': '0:45'
-    },
-    {
-      'title': 'Ocean Waves Relax',
-      'url': 'https://assets.mixkit.co/videos/preview/mixkit-sea-ocean-waves-coastal-view-1159-large.mp4',
-      'duration': '0:30'
-    },
-  ];
+  // Pick Offline Video from Device
+  Future<void> _pickVideo() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.video);
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        offlineVideos.add(File(result.files.single.path!));
+      });
+    }
+  }
 
-  final List<Map<String, String>> sampleMusic = [
-    {
-      'title': 'Peaceful Acoustic Guitar',
-      'artist': 'AudioLibrary',
-      'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
-    },
-    {
-      'title': 'Ambient Chill Sound',
-      'artist': 'Relaxing Beats',
-      'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
-    },
-  ];
+  // Pick Offline Music from Device
+  Future<void> _pickMusic() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.audio);
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        offlineMusic.add(File(result.files.single.path!));
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,19 +129,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("MEDIA PLAYER", style: TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.bold)),
+                          Text("OFFLINE MEDIA PLAYER", style: TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.bold)),
                           SizedBox(height: 2),
                           Text("MediaX Pro", style: TextStyle(color: Color(0xFF0F172A), fontSize: 24, fontWeight: FontWeight.w900)),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withOpacity(0.2),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF0284C7), width: 1.5),
+                      IconButton(
+                        onPressed: _currentTab == 0 ? _pickVideo : _pickMusic,
+                        icon: const Icon(Icons.add_rounded, color: Color(0xFF0F172A), size: 30),
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7).withOpacity(0.2),
+                          shape: const CircleBorder(),
                         ),
-                        child: const Icon(Icons.play_arrow_rounded, color: Color(0xFF0F172A), size: 24),
                       )
                     ],
                   ),
@@ -167,8 +164,8 @@ class _HomeScreenState extends State<HomeScreen> {
             unselectedItemColor: const Color(0xFF475569),
             onTap: (index) => setState(() => _currentTab = index),
             items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.video_library_rounded, size: 26), label: 'Videos'),
-              BottomNavigationBarItem(icon: Icon(Icons.music_note_rounded, size: 26), label: 'Music'),
+              BottomNavigationBarItem(icon: Icon(Icons.video_library_rounded, size: 26), label: 'Local Videos'),
+              BottomNavigationBarItem(icon: Icon(Icons.library_music_rounded, size: 26), label: 'Local Music'),
             ],
           ),
         ),
@@ -177,14 +174,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildVideoList() {
+    if (offlineVideos.isEmpty) {
+      return const Center(child: Text("No videos added! Tap '+' to select from phone.", style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.bold), textAlign: TextAlign.center));
+    }
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: sampleVideos.length,
+      itemCount: offlineVideos.length,
       itemBuilder: (context, index) {
-        final video = sampleVideos[index];
+        final file = offlineVideos[index];
+        final fileName = file.path.split('/').last;
         return GestureDetector(
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => VideoPlayerScreen(videoUrl: video['url']!, title: video['title']!)));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => VideoPlayerScreen(videoFile: file, title: fileName)));
           },
           child: GlassCard(
             margin: const EdgeInsets.only(bottom: 12),
@@ -202,14 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(video['title']!, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text("Duration: ${video['duration']}", style: const TextStyle(color: Color(0xFF475569), fontSize: 13)),
-                    ],
-                  ),
+                  child: Text(fileName, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ),
                 const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF475569), size: 16),
               ],
@@ -221,14 +215,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMusicList() {
+    if (offlineMusic.isEmpty) {
+      return const Center(child: Text("No music added! Tap '+' to select from phone.", style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.bold), textAlign: TextAlign.center));
+    }
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: sampleMusic.length,
+      itemCount: offlineMusic.length,
       itemBuilder: (context, index) {
-        final music = sampleMusic[index];
+        final file = offlineMusic[index];
+        final fileName = file.path.split('/').last;
         return GestureDetector(
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => MusicPlayerScreen(musicUrl: music['url']!, title: music['title']!, artist: music['artist']!)));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => MusicPlayerScreen(musicFile: file, title: fileName)));
           },
           child: GlassCard(
             margin: const EdgeInsets.only(bottom: 12),
@@ -246,14 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(music['title']!, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(music['artist']!, style: const TextStyle(color: Color(0xFF475569), fontSize: 13)),
-                    ],
-                  ),
+                  child: Text(fileName, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ),
                 const Icon(Icons.play_arrow_rounded, color: Color(0xFF0D9488), size: 28),
               ],
@@ -265,11 +256,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Full Video Player Screen
+// Local Video Player Screen
 class VideoPlayerScreen extends StatefulWidget {
-  final String videoUrl;
+  final File videoFile;
   final String title;
-  const VideoPlayerScreen({super.key, required this.videoUrl, required this.title});
+  const VideoPlayerScreen({super.key, required this.videoFile, required this.title});
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
@@ -282,7 +273,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+    _controller = VideoPlayerController.file(widget.videoFile)
       ..initialize().then((_) {
         setState(() {});
         _controller.play();
@@ -322,12 +313,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 }
 
-// Music Player Screen
+// Local Music Player Screen
 class MusicPlayerScreen extends StatefulWidget {
-  final String musicUrl;
+  final File musicFile;
   final String title;
-  final String artist;
-  const MusicPlayerScreen({super.key, required this.musicUrl, required this.title, required this.artist});
+  const MusicPlayerScreen({super.key, required this.musicFile, required this.title});
 
   @override
   State<MusicPlayerScreen> createState() => _MusicPlayerScreenState();
@@ -344,7 +334,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   }
 
   void _playMusic() async {
-    await _audioPlayer.play(UrlSource(widget.musicUrl));
+    await _audioPlayer.play(DeviceFileSource(widget.musicFile.path));
     setState(() => _isPlaying = true);
   }
 
@@ -377,9 +367,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                   children: [
                     const Icon(Icons.music_note_rounded, size: 80, color: Color(0xFF0D9488)),
                     const SizedBox(height: 20),
-                    Text(widget.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)), textAlign: TextAlign.center),
-                    const SizedBox(height: 8),
-                    Text(widget.artist, style: const TextStyle(fontSize: 16, color: Color(0xFF475569)), textAlign: TextAlign.center),
+                    Text(widget.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 40),
                     IconButton(
                       iconSize: 64,

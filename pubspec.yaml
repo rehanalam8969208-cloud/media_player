@@ -1,5 +1,5 @@
 name: media_player
-description: "MX Player style Video & Music Player with Glass Theme"
+description: "Offline MX Player style Video & Music Player with Glass Theme"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   video_player: ^2.8.2
   audioplayers: ^6.0.0
+  file_picker: ^8.0.0
   cupertino_icons: ^1.0.2
 
 flutter:

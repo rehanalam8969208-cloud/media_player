@@ -1,0 +1,17 @@
+name: media_player
+description: "MX Player style Video & Music Player with Glass Theme"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  video_player: ^2.8.2
+  audioplayers: ^6.0.0
+  cupertino_icons: ^1.0.2
+
+flutter:
+  uses-material-design: true

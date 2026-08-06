@@ -24,13 +24,6 @@ jobs:
         run: |
           rm -rf android
           flutter create . --platforms=android --org=com.rehan.mymusic
-          
-          # Adding Audio, Storage, and Notification Permissions automatically
-          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIFEST_PATH" ]; then
-            sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>' "$MANIFEST_PATH"
-            echo "Music & Notification Permissions added!"
-          fi
 
       - name: Get Dependencies
         run: flutter pub get

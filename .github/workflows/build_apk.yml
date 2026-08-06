@@ -24,13 +24,6 @@ jobs:
         run: |
           rm -rf android
           flutter create . --platforms=android --org=com.rehan.mediax
-          
-          # Adding Storage & Read Permissions automatically to AndroidManifest.xml
-          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIFEST_PATH" ]; then
-            sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>' "$MANIFEST_PATH"
-            echo "Storage Permissions added successfully!"
-          fi
 
       - name: Get Dependencies
         run: flutter pub get
